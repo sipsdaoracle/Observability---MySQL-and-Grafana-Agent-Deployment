@@ -1,0 +1,37 @@
+name: $(Build.BuildId)_$(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)_$(Rev:rr)
+
+trigger:
+  branches:
+    include:
+    - development
+  paths:
+    #exclude:
+    include:
+    - src/loadgenerator
+    - pipelines/loadgenerator.dev.yaml
+
+pool:
+  name: blueprints-preprod-apps
+
+resources:
+  repositories:
+  - repository: ado-pipeline-blueprints
+    name: foundational-blueprints-pipelines/ado-pipeline-blueprints
+    type: git
+
+stages:
+- stage: build
+  dependsOn: []
+  variables: 
+  - group: base_image_variable_group
+  jobs:
+  - job: container
+    steps:
+    - template: /pipelines/steps-build-and-push-generic.yaml@ado-pipeline-blueprints
+      parameters:
+        registry: $(registry) 
+        repository: $(repository)
+        imageName: demo-node-web-app-loadgenerator
+        imageTag: $(Build.SourceBranchName)-0.0.$(Build.BuildId)
+        dockerFile: Dockerfile
+        dockerDirectory: src/loadgenerator

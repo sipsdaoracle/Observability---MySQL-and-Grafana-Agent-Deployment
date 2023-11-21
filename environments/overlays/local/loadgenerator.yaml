@@ -1,0 +1,12 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+    annotations:
+        argocd-image-updater.argoproj.io/container.update-strategy: semver
+    name: loadgenerator
+    namespace: argocd
+spec:
+    source:
+        helm:
+            valueFiles:
+                - ../../environments/overlays/local/loadgenerator-values.yaml

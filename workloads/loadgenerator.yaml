@@ -1,0 +1,25 @@
+apiVersion: score.dev/v1b1
+metadata:
+    name: loadgenerator
+service:
+    ports:
+        http:
+            port: 8089
+            targetPort: 8089
+containers:
+    loadgenerator:
+        image: ${profile.host}/${resources.argocd-image.registry}:0.0.1
+        command:
+            - /cnb/process/web
+resources:
+    argocd-image:
+        type: argocd-image
+        params:
+            registry: loadgenerator
+    namespace:
+        type: namespace
+    instrument:
+        type: instrumentation
+        params:
+            language: sdk
+            configuration: observability/instrumentation

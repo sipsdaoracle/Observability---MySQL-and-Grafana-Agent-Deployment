@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UUID Generator</title>
+  <link rel="stylesheet" href="./demo-app/style.css">
+  </script>  
+</head>
+<body>
+  <div class="header-logo">
+    <img src="./demo-app/logo.png" alt="Deimos Logo" height=30% width=30% >
+  </div>
+  <div class="text-module">
+    <h1>Universally Unique Identifier Generator</h1>
+    <p>
+      <b>U</b>niversally <b>U</b>nique <b>ID</b>entifier (UUID) is a 128-bit label used for information in computer systems.
+    </p>
+    <p>
+      When generated according to the standard methods, UUIDs are, for practical purposes, unique. Their uniqueness does not depend on a central registration authority or coordination between the parties generating them, unlike most other numbering schemes. While the probability that a UUID will be duplicated is not zero, it is generally considered close enough to zero to be negligible.
+    </p>
+  </div>
+  <div class="uuid-module">
+    <div>
+      <button class="generate-uuid-button" id="generateUuidButton">Generate UUID</button>
+    </div>
+    <div>
+      <textarea id="uuidBox" readonly></textarea>
+    </div> 
+    <div>
+      <button class="copy-button" id="copyButton">Copy</button>
+    </div>  
+  </div>
+
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+  <script>
+    $(function(){ // jQuery DOM ready
+      $("#generateUuidButton").click(function () {
+        var url = './demo-app/generateuuid';
+
+        $.get(url, function (data) {
+          $("#uuidBox").val(data);
+        });
+      });
+
+      $("#copyButton").on('click', () => {
+        navigator.clipboard.writeText($("#uuidBox").val()).then(
+          () => {
+            console.log('clipboard successfully set');
+          },
+          () => {
+            console.error('clipboard write failed');
+          }
+        );
+      });
+    });    
+  </script>
+</body>
+</html>

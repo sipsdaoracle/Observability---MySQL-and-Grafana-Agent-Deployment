@@ -1,0 +1,11 @@
+
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: git-app-repo
+spec:
+  params:
+  - name: url
+    value: https://github.com/podtato-head/podtato-head.git
+  - name: revision
+    value: master

@@ -1,0 +1,15 @@
+name: Check docs
+on: [pull_request]
+jobs:
+  build-technical-documentation:
+    runs-on: "ubuntu-latest"
+    steps:
+    - name: "Check out code"
+      uses: "actions/checkout@v4"
+    - name: "Build technical documentation"
+      run: >
+        docker run
+        --volume "${PWD}/docs/sources:/hugo/content/docs/agent/latest"
+        --env HUGO_REFLINKSERRORLEVEL=ERROR
+        --rm grafana/docs-base:latest
+        /bin/bash -c 'echo -e "---\\nredirectURL: /docs/agent/latest/\\ntype: redirect\\nversioned: true\\n---\\n" > /hugo/content/docs/agent/_index.md && make hugo'

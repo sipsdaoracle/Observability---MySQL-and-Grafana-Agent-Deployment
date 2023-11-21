@@ -1,0 +1,10 @@
+# apiVersion: tekton.dev/v1beta1
+# kind: Pipeline
+# metadata:
+#   name: build-images-pipeline
+# spec:
+#   tasks:
+#     - name: build-images-task
+#       taskRef:
+#         name: build-images-task
+    

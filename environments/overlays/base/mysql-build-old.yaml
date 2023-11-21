@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    deimos.io/environment-local: deploy
+  name: mysql
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: sips-cicd-project
+  source:
+    repoURL: https://github.com/DeimosCloud/sips-cicd.git
+    path: src/mysql
+    targetRevision: HEAD
+    helm:
+      releaseName: mysql
+      values: |
+        fullnameOverride: mysql
+        livenessProbe: 
+          enabled: false
+        readinessProbe: 
+          enabled: false
+        startupProbe: 
+          enabled: false
+        # service:
+        #   port: 3306
+        # db:
+        #   name: my_database
+        auth:
+          username: admin 
+          existingSecret: mysql-secrets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd2
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    retry:
+      limit: -1

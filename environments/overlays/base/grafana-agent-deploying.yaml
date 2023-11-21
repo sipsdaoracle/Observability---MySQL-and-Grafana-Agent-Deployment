@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    deimos.io/environment-local: deploy
+  name: grafana-agent
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: sips-cicd-project
+  source:
+    chart: grafana-agent
+    repoURL: https://grafana.github.io/helm-charts 
+    targetRevision: 0.27.0
+    helm:
+      releaseName: grafana-agent
+      values: |
+        fullnameOverride: grafana-agent
+        livenessProbe: {} 
+        readinessProbe: {}
+        agent:
+          # -- Mode to run Grafana Agent in. Can be "flow" or "static".
+          mode: 'static'
+          configMap:
+            # -- Create a new ConfigMap for the config file.
+            create: false
+            # -- Content to assign to the new ConfigMap.  This is passed into `tpl` allowing for templating from values.
+            content: ''       
+            # -- Name of existing ConfigMap to use. Used when create is false.
+            name: grafana-agent-metrics
+            # -- Key in ConfigMap to get config from.
+            key: 'agent.yaml'
+        image:
+          tag: 'v0.33.1'
+        controller:
+          # -- Type of controller to use for deploying Grafana Agent in the cluster.
+          # Must be one of 'daemonset', 'deployment', or 'statefulset'.
+          type: 'statefulset'
+        extraArgs: 
+          - -enable-features=integrations-next
+        # serviceAccount:
+        #   # -- Whether to create a service account for the Grafana Agent deployment.
+        #   create: false
+        #   # -- Annotations to add to the created service account.
+        #   annotations: {}
+        #   # -- The name of the existing service account to use when
+        #   # serviceAccount.create is false.
+        #   name: grafana-agent
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd2
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: -1

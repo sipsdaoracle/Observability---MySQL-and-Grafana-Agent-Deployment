@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonAnnotations:
+    deimos.io/application: sips-cicd
+    deimos.io/customer: deimos.io
+    deimos.io/owner: sre@deimos.io
+    deimos.io/project: sips-cicd
+    deimos.io/repo: https://github.com/deimoscloud/sips-cicd.git
+    deimos.io/version: 0.0.1
+resources:
+    - deimos.io
+    - loadgenerator.yaml
+    - node-web-app.yaml
+    # - rabbitmq-cluster-operator.yaml
+    # - tekton.yaml
+    # - podtatohead.yaml
+    # - agent-crd.yaml
+    # - grafana-agent-metrics.yaml
+    # - grafana-agent-operator.yaml
+    # - grafana-agent-deploying.yaml
+    # - mysql-secrets.yaml
+    - mysql-build-old.yaml
+    # - grafana-agent-config.yaml
+    # - mysql-secrets.yaml
+    - mysqld-exporter.yaml
+    # - elasticsearch-deployment.yaml
+    # - kibana-deployment.yaml
+
+    
+
+    

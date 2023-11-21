@@ -1,0 +1,280 @@
+kind: ConfigMap
+metadata:
+  name: grafana-agent-metrics
+  namespace: argocd2
+apiVersion: v1
+data:
+  agent.yaml: |    
+    metrics:
+      wal_directory: /var/lib/agent/wal
+      global:
+        scrape_interval: 60s
+        external_labels:
+          cluster: sips-cicd-cicd
+      configs:
+      - name: integrations
+        remote_write:
+        # - url: http://kube-prometheus-stack-prometheus.observability:9090/api/v1/write  
+          - url: https://prometheus-prod-05-gb-south-0.grafana.net/api/prom/push
+            basic_auth:
+              username: '1095559'
+              password: 'glc_eyJvIjoiOTAyMjAxIiwibiI6InN0YWNrLTY5NDU2NC1obS13cml0ZS1ncmFmYW5hLW1ldHJpY3MiLCJrIjoiMlJQN25FZ0ZRNlc5OHdyVUMxOTMydnM2IiwibSI6eyJyIjoicHJvZC1nYi1zb3V0aC0wIn19'
+
+        scrape_configs:           
+        # ----------------------------------------------------------------------------------------
+        # integrations/kubernetes/cadvisor
+        # ----------------------------------------------------------------------------------------
+        - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          job_name: cadvisor
+          kubernetes_sd_configs:
+              - role: node
+          metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: kube_replicaset_owner|container_cpu_usage_seconds_total|kube_pod_owner|node_filesystem_free_bytes|namespace_workload_pod:kube_pod_owner:relabel|container_memory_working_set_bytes|kube_namespace_status_phase|kube_pod_status_phase|node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate|node_namespace_pod_container:container_memory_working_set_bytes|namespace_workload_pod|kubelet_volume_stats_available_bytes|kubelet_volume_stats_capacity_bytes|kube_deployment_status_replicas|kube_deployment_status_replicas_available|kube_deployment_status_replicas_unavailable|kube_deployment_status_replicas_updated|kube_node_info|kube_node_status_allocatable|node_filesystem_size_bytes|kube_node_status_capacity|kube_node_status_condition|kube_pod_info|kube_pod_container_resource_requests
+                action: keep
+          relabel_configs:
+              - replacement: kubernetes.default.svc.cluster.local:443
+                target_label: __address__
+              - regex: (.+)
+                replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+                source_labels:
+                  - __meta_kubernetes_node_name
+                target_label: __metrics_path__
+          scheme: https
+          tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: false
+              server_name: kubernetes
+        # ----------------------------------------------------------------------------------------
+        # integrations/kubernetes/kubelet
+        # ----------------------------------------------------------------------------------------        
+        - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          job_name: kubelet
+          kubernetes_sd_configs:
+              - role: node
+          metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: kube_replicaset_owner|container_cpu_usage_seconds_total|kube_pod_owner|node_filesystem_free_bytes|namespace_workload_pod:kube_pod_owner:relabel|container_memory_working_set_bytes|kube_namespace_status_phase|kube_pod_status_phase|node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate|node_namespace_pod_container:container_memory_working_set_bytes|namespace_workload_pod|kubelet_volume_stats_available_bytes|kubelet_volume_stats_capacity_bytes|kube_deployment_status_replicas|kube_deployment_status_replicas_available|kube_deployment_status_replicas_unavailable|kube_deployment_status_replicas_updated|kube_node_info|kube_node_status_allocatable|node_filesystem_size_bytes|kube_node_status_capacity|kube_node_status_condition|kube_pod_info|kube_pod_container_resource_requests
+                action: keep
+          relabel_configs:
+              - replacement: kubernetes.default.svc.cluster.local:443
+                target_label: __address__
+              - regex: (.+)
+                replacement: /api/v1/nodes/${1}/proxy/metrics
+                source_labels:
+                  - __meta_kubernetes_node_name
+                target_label: __metrics_path__
+          scheme: https
+          tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: false
+              server_name: kubernetes
+        # ----------------------------------------------------------------------------------------
+        # integrations/kubernetes/kube-state-metrics
+        # ----------------------------------------------------------------------------------------        
+        - job_name: kube-state-metrics
+          kubernetes_sd_configs:
+              - role: pod
+          metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: kube_replicaset_owner|container_cpu_usage_seconds_total|kube_pod_owner|node_filesystem_free_bytes|namespace_workload_pod:kube_pod_owner:relabel|container_memory_working_set_bytes|kube_namespace_status_phase|kube_pod_status_phase|node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate|node_namespace_pod_container:container_memory_working_set_bytes|namespace_workload_pod|kubelet_volume_stats_available_bytes|kubelet_volume_stats_capacity_bytes|kube_deployment_status_replicas|kube_deployment_status_replicas_available|kube_deployment_status_replicas_unavailable|kube_deployment_status_replicas_updated|kube_node_info|kube_node_status_allocatable|node_filesystem_size_bytes|kube_node_status_capacity|kube_node_status_condition|kube_pod_info|kube_pod_container_resource_requests
+                action: keep
+          relabel_configs:
+              - action: keep
+                regex: kube-state-metrics
+                source_labels:
+                  - __meta_kubernetes_pod_label_app_kubernetes_io_name
+              - source_labels: 
+                  - __meta_kubernetes_pod_label_app_kubernetes_io_instance
+                target_label: application               
+        # ----------------------------------------------------------------------------------------
+        # integrations/node_exporter
+        # ----------------------------------------------------------------------------------------        
+        - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          job_name: node_exporter
+          kubernetes_sd_configs:
+              - namespaces:
+                  names:
+                      - argocd2
+                role: pod
+          metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: kube_replicaset_owner|container_cpu_usage_seconds_total|kube_pod_owner|node_filesystem_free_bytes|namespace_workload_pod:kube_pod_owner:relabel|container_memory_working_set_bytes|kube_namespace_status_phase|kube_pod_status_phase|node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate|node_namespace_pod_container:container_memory_working_set_bytes|namespace_workload_pod|kubelet_volume_stats_available_bytes|kubelet_volume_stats_capacity_bytes|kube_deployment_status_replicas|kube_deployment_status_replicas_available|kube_deployment_status_replicas_unavailable|kube_deployment_status_replicas_updated|kube_node_info|kube_node_status_allocatable|node_filesystem_size_bytes|kube_node_status_capacity|kube_node_status_condition|kube_pod_info|kube_pod_container_resource_requests
+                action: keep
+          relabel_configs:
+              - action: keep
+                regex: prometheus-node-exporter.*
+                source_labels:
+                  - __meta_kubernetes_pod_label_app_kubernetes_io_name
+              - action: replace
+                source_labels:
+                  - __meta_kubernetes_pod_node_name
+                target_label: instance
+              - action: replace
+                source_labels:
+                  - __meta_kubernetes_namespace
+                target_label: namespace
+          tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: false
+        # ----------------------------------------------------------------------------------------
+        # kubernetes-pods
+        # ----------------------------------------------------------------------------------------        
+        - job_name: 'kubernetes-pods'
+          kubernetes_sd_configs:
+            - role: pod
+              selectors:
+                - role: pod
+          relabel_configs:
+            # Expose Pod labels as metric labels
+            - action: labelmap
+              regex: __meta_kubernetes_pod_label_(.+)
+            # Expose Pod namespace as metric namespace label
+            - source_labels: [__meta_kubernetes_namespace]
+              action: replace
+              target_label: namespace
+            # Expose Pod name as metric name label
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: replace
+              target_label: pod
+
+    
+    integrations:
+      # ----------------------------------------------------------------------------------------
+      # Configures the default metrics instance to use by all integrations
+      # It points to the one configured in metrics.configs[0].name
+      # ----------------------------------------------------------------------------------------           
+      metrics:
+        autoscrape:
+          metrics_instance: integrations
+      # ----------------------------------------------------------------------------------------
+      # eventhandler
+      # ----------------------------------------------------------------------------------------        
+      eventhandler:
+        cache_path: /var/lib/agent/eventhandler.cache
+        logs_instance: eventhandlerlogs
+      # ----------------------------------------------------------------------------------------
+      # mssql_exporter
+      # ----------------------------------------------------------------------------------------        
+      mysql_configs:
+        - data_source_name: "root:password@(mysql:3306)/"
+
+    logs:
+      configs:
+      - name: eventhandlerlogs
+        clients:
+        - url: http://loki-stack.observability:3100/loki/api/v1/push
+          external_labels:
+            cluster: sips-cicd
+            job: integrations/kubernetes/eventhandler
+        positions:
+          filename: /tmp/positions.yaml
+        target_config:
+          sync_period: 10s
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana-agent
+  namespace: argocd2
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: grafana-agent
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: grafana-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: grafana-agent
+subjects:
+- kind: ServiceAccount
+  name: grafana-agent
+  # name: svc-gke-grafana-agt-dev
+  namespace: argocd2
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grafana-agent
+  namespace: argocd2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: grafana-agent
+  serviceName: grafana-agent
+  template:
+    metadata:
+      labels:
+        name: grafana-agent
+    spec:
+      serviceAccountName: grafana-agent
+      containers:
+      - args:
+        - -config.expand-env=true
+        - -config.file=/etc/agent/agent.yaml
+        - -enable-features=integrations-next
+        - -server.http.address=0.0.0.0:80
+        env:
+        - name: grafana-agent
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: sips-cicd
+          value: docker
+        # - name: PROM_URL
+        #   value: http://kube-prometheus-stack-prometheus.observability:9090/api/v1/write
+        image: grafana/agent:v0.33.1
+        imagePullPolicy: IfNotPresent
+        name: grafana-agent
+        ports:
+        - containerPort: 80
+          name: http-metrics
+        volumeMounts:
+        - mountPath: /var/lib/agent
+          name: agent-wal
+        - mountPath: /etc/agent
+          name: grafana-agent
+      volumes:
+      - configMap:
+          name: grafana-agent-metrics
+        name: grafana-agent
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: agent-wal
+      namespace: argocd2
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

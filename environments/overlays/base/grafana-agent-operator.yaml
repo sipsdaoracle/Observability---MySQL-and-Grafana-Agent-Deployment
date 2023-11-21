@@ -1,0 +1,116 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+ name: grafana-agent-operator
+ namespace: argocd
+ finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+ project: sips-cicd-project
+ source:
+  chart: grafana-agent-operator
+  repoURL: https://grafana.github.io/helm-charts
+  targetRevision: v0.3.9 
+  helm:
+    releaseName: grafana-agent-operator
+    values: |
+        fullnameOverride: grafana-agent
+        livenessProbe: {}
+        podAnnotations:
+          instrumentation.opentelemetry.io/inject-sdk: observability/instrumentation
+        readinessProbe: {}
+        service:
+          port: 80
+        integrations:
+          agent:
+            enabled: true
+            relabel_configs:
+              - action: replace
+                source_labels:
+                - agent_hostname
+                target_label: instance
+              - action: replace
+                target_label: job
+                replacement: "integrations/agent-check"
+            metric_relabel_configs:
+              - action: keep
+                regex: (prometheus_target_.*|prometheus_sd_discovered_targets|agent_build.*|agent_wal_samples_appended_total|process_start_time_seconds)
+                source_labels:
+                - __name__
+          customResources:
+            enabled: true
+          agents:
+            - name: grafana-agent
+              endpoint: kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+              additionalConfig:
+                prometheus:
+                  global:
+                    scrape_interval: 15s
+                  configs:
+                    - name: mysql_scrape_config
+                      scrape_configs:
+                        - job_name: 'mysql-monitor'
+                          static_configs:
+                            - targets: ['mysql-exporter.argocd2.svc.cluster.local:9104']
+                              labels:
+                                alias: db1
+                    - name: workload_scrape_config
+                      scrape_configs:
+                        - job_name: 'workload-monitor'
+                          static_configs:
+                            - targets: ['10.110.47.99:9090']
+                              labels:
+                                alias: workload
+                    - name: minikube_scrape_config
+                      scrape_configs:
+                        - job_name: 'minikube-monitor'
+                          static_configs:
+                            - targets: ['192.168.49.2:9100']
+                              labels:
+                                alias: minikube
+                logs:
+                  instanceSelector:
+                    matchLabels:
+                      agent: grafana-agent-logs
+                  config:
+                    positions:
+                      filename: /tmp/positions.yaml
+                    clients:
+                      - url: http://loki:3100/loki/api/v1/push
+                  scrape_configs:
+                    - job_name: 'workload-logs'
+                      static_configs:
+                        - targets: ['10.99.159.183:3100']
+                          labels:
+                            job: workload
+customResources:
+  - apiVersion: monitoring.coreos.com/v1
+    kind: ServiceMonitor
+    metadata:
+      name: mysql-exporter-service-monitor
+    spec:
+      selector:
+        matchLabels:
+          app: mysql-exporter
+      endpoints:
+      - port: 9090
+        scheme: http
+receivers:
+- name: prometheus-receiver
+  prometheus:
+    static_configs:
+    - targets:
+      - 'prometheus.observability.svc.cluster.local:9090'
+    - action: keep
+    regex: (prometheus_target_.*|prometheus_sd_discovered_targets|agent_build.*|agent_wal_samples_appended_total|process_start_time_seconds)
+    source_labels:
+    - __name__
+destination:
+  server: https://kubernetes.default.svc
+  namespace: argocd2
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace

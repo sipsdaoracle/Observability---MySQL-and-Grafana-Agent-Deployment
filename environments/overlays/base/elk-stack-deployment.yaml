@@ -1,0 +1,77 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: elk-stack
+#   namespace: argocd
+#   finalizers:
+#   - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: sips-cicd-project
+#   source:
+#     chart: elastic-stack
+#     repoURL: 'https://github.com/elastic/helm-charts.git'
+#     targetRevision: v1.1.4
+#     helm:
+#       valueFiles:
+#         - values.yaml
+#       values: |
+#         elasticsearch:
+#           persistence:
+#             enabled: true
+#             size: 10Gi
+#         filebeat:
+#           enabled: true
+#           config:
+#             filebeat.inputs:
+#             - type: log
+#               enabled: true
+#               paths:
+#                 - /var/log/*.log
+#         logstash:
+#           enabled: true
+#           pipeline:
+#             workers: 4
+#             batch.size: 125
+#             batch.delay: 5
+#             input:
+#               beats:
+#                 port: 5044
+#         opentelemetryCollector:
+#           enabled: true
+#           config:
+#             receivers:
+#               otlp:
+#                 protocols:
+#                   grpc:
+#                   http:
+#               metrics:
+#                 prometheus:
+#                   config:
+#                     scrape_configs:
+#                       - job_name: 'otel-collector'
+#                         scrape_interval: 5s
+#                         static_configs:
+#                           - targets: ['localhost:8888']
+#             processors:
+#               batch:
+#             exporters:
+#               elasticsearch:
+#                 endpoint: "http://elasticsearch.default.svc:9200"
+#                 index: "otel-v1-apm-span-{now/d}"
+#         kibana:
+#           enabled: true
+#           config:
+#             elasticsearch.hosts: ["http://elasticsearch.default.svc:9200"]
+#             kibana.index: ".kibana"
+#             kibana.defaultAppId: "dashboards"
+#             dashboard:
+#               default:
+#                 title: "GitLab Deployments"
+#                 panelsJSON: "..."
+#   destination:
+#     server: 'https://kubernetes.default.svc'
+#     namespace: argocd2
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true

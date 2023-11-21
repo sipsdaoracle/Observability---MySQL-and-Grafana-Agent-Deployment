@@ -1,0 +1,9 @@
+# apiVersion: tekton.dev/v1beta1
+# kind: PipelineRun
+# metadata:
+#   name: build-images-pipeline-run
+# spec:
+#   pipelineRef:
+#     name: build-images-pipeline
+#   resources: []
+#   serviceAccountName: default

@@ -1,0 +1,11 @@
+- name: lint-environments
+    taskRef:
+    name: yaml-lint
+    runAfter:
+    - git-clone
+    workspaces:
+    - name: shared-workspace
+        workspace: source
+    params:
+    - name: args
+        value: ["./environments"]

@@ -1,0 +1,39 @@
+apiVersion: score.dev/v1b1
+metadata:
+    name: node-web-app
+service:
+    ports:
+        http:
+            port: 8081
+            targetPort: 8081
+containers:
+    node-web-app:
+        image: ${profile.host}/${resources.argocd-image.registry}:0.0.1
+        command:
+            - /cnb/process/web
+        variables:
+            NODE_ENV: ${resources.env.NODE_ENV}
+        livenessProbe:
+            httpGet:
+                port: 8081
+                path: /healthz
+        readinessProbe:
+            httpGet:
+                port: 8081
+                path: /healthz
+resources:
+    argocd-image:
+        type: argocd-image
+        params:
+            registry: node-web-app
+    env:
+        type: environment
+        params:
+            NODE_ENV: production
+    namespace:
+        type: namespace
+    instrument:
+        type: instrumentation
+        params:
+            language: nodejs
+            configuration: observability/instrumentation

@@ -1,0 +1,211 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-pipeline
+  namespace: tekton-runs
+secrets:
+  - name: github-deimoscloud
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations: 
+      tekton.dev/git-0: https://github.com/deimoscloud
+  name: github-deimoscloud
+  namespace: tekton-runs
+type: kubernetes.io/basic-auth
+stringData:
+  username: siphokazi-dolo-deimos
+  password: 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
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: podtato-head-build
+  namespace: tekton-runs
+spec:
+  description: >-
+    The pipeline will build the podtato-head containers and publish them to the local container registry
+  params:
+    - name: repo
+      description: The git repo
+      default: https://github.com/DeimosCloud/sips-cicd.git
+    - name: revision
+      description: The git revision to use
+      default: main
+  tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.repo)
+        - name: revision
+          value: $(params.revision)
+        - name: deleteExisting
+          value: "true"
+        - name: depth
+          value: "0"
+      workspaces:
+        - name: output
+          workspace: source
+    - name: git-version
+      taskRef:
+        name: git-version
+      runAfter:
+        - git-clone
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: branch
+          value: $(params.revision)
+    - name: podtato-head-build
+      taskRef:
+        name: buildpacks
+      runAfter:
+        - git-version
+      params:
+        - name: SOURCE_SUBPATH
+          value: src/podtato-head/podtato-head-server
+        - name: APP_IMAGE
+          value: registry.kube-system.svc.cluster.local:80/podtato-head:$(tasks.git-version.results.packageVersion)
+        - name: BUILDER_IMAGE
+          value: paketobuildpacks/builder:base
+      workspaces:
+        - name: source
+          workspace: source
+
+    - name: display-results
+      runAfter:
+          - podtato-head-build
+      taskSpec:
+        steps:
+          - name: print
+            image: docker.io/library/bash:5.1.4@sha256:b208215a4655538be652b2769d82e576bc4d0a2bb132144c060efc5be8c3f5d6
+            script: |
+              #!/usr/bin/env bash
+              set -e
+              echo "Digest of created app image: $(params.DIGEST)"              
+        params:
+          - name: DIGEST
+      params:
+        - name: DIGEST
+          value: $(tasks.podtato-head-build.results.APP_IMAGE_DIGEST)
+    - name: scan-podtato-head
+      taskRef:
+        name: grype
+        kind: Task
+      runAfter:
+        - podtato-head-build
+      params:
+        - name: ARGS
+          value:
+            - registry.kube-system.svc.cluster.local:80/podtato-head:$(tasks.git-version.results.packageVersion)                   
+
+  results:
+    - name: version
+      description: the version of the containers
+      value: $(tasks.git-version.results.packageVersion)          
+  workspaces:
+    - name: source
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  annotations:
+    chains.tekton.dev/signed: 'true'
+  generateName: test-podtato-head-build
+  labels:
+    app.kubernetes.io/instance: gitops-tekton-annotations
+  name: test-podtato-head-build
+  namespace: tekton-runs
+spec:
+  pipelineRef:
+    name: podtato-head-build
+  serviceAccountName: github-deimoscloud
+  timeout: 1h0m0s
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 100Mi
+# ---
+# apiVersion: tekton.dev/v1beta1
+# kind: TriggerBinding
+# metadata:
+#   name: git-push-trigger-binding
+# spec:
+#   params:
+#     - name: git-repo-url
+#       value: https://github.com/DeimosCloud/sips-cicd.git
+#     - name: git-revision
+#       value: $(body.head_commit.id)
+
+# ---
+# apiVersion: tekton.dev/v1beta1
+# kind: TriggerTemplate
+# metadata:
+#   name: git-push-trigger
+# spec:
+#   params:
+#     - name: git-repo-url
+#       type: string
+#     - name: git-revision
+#       type: string
+#   resourcetemplates:
+#     - apiVersion: tekton.dev/v1beta1
+#       kind: PipelineRun
+#       metadata:
+#         generateName: git-push-pipeline-run-
+#       spec:
+#         pipelineRef:
+#           name: podtato-head-build
+#         params:
+#           - name: repo
+#             value: https://github.com/DeimosCloud/sips-cicd.git
+#           - name: revision
+#             value: $(tt.params.git-revision)
+#         serviceAccountName: github-deimoscloud
+#         workspaces:
+#           - name: source
+#             volumeClaimTemplate:
+#               spec:
+#                 accessModes:
+#                   - ReadWriteOnce
+#                 resources:
+#                   requests:
+#                     storage: 100Mi
+
+# ---
+# apiVersion: tekton.dev/v1beta1
+# kind: Trigger
+# metadata:
+#   name: git-push-trigger
+# spec:
+#   resourcetemplates:
+#     - apiVersion: triggers.tekton.dev/v1alpha1
+#       kind: TriggerTemplate
+#       name: git-push-trigger
+#     - apiVersion: triggers.tekton.dev/v1alpha1
+#       kind: TriggerBinding
+#       name: git-push-trigger-binding
+#   eventListener:
+#     name: tekton-triggers-eventlistener
+#   params:
+#     - name: git-repo-url
+#       value: $(body.repository.git_url)
+#     - name: git-revision
+#       value: $(body.head_commit.id)
+#   triggers:
+#     - name: git-push-trigger
+#       bindings:
+#         - git-push-trigger-binding
+#       template:
+#         name: git-push-trigger

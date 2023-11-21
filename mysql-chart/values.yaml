@@ -1,0 +1,7 @@
+replicaCount: 1
+image:
+    repository: mysql
+    tag: "8.1"
+service:
+     type: Node
+     port: 3306

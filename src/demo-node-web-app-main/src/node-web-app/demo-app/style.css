@@ -1,0 +1,62 @@
+.header-logo {
+  max-width: var(--pageMaxWidth);
+  padding: 0px 0px 50px 0px;
+}
+
+.uuid-module div {
+  float: left;
+  clear: none;
+}
+
+.text-module div {
+  padding: 0px 0px 50px 0px;
+}
+
+.generate-uuid-button {
+  width: 190px;
+}
+
+.copy-button {
+  width: 70px;
+}
+
+textarea {
+  border: 1px solid #4c87af;
+  border-radius: 4px;
+  color: var(--deimosBlue);
+  font-size: 27px;
+  height: 42px;
+  width: 600px;
+  resize: none;
+  text-align: center;
+  text-align-last: center;
+  vertical-align: center;
+}
+
+button {
+  background-color:var(--buttonColor);
+  border-radius: 0px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  height: 48px;
+  padding: 5px;
+  width: 112px;
+}
+
+body {
+  padding-top: 50px;
+  padding-left: 100px;
+  padding-right: 100px;
+  --deimosBlue: #68caf8;
+  --textColor: #f2f2f2;
+  --buttonColor: #008bf2;
+  --backgroundColor: #000a2e;
+  --backgroundColorAlt: #3b1370;
+  --pageMaxWidth: 1200px;
+  background-color: var(--backgroundColor);
+  color: var(--textColor);
+  font-family: Rubik,Work Sans,sans-serif;
+  text-decoration: none;
+  transition: background .2s ease-in;
+}

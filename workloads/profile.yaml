@@ -1,0 +1,92 @@
+argoProject: gitops-tekton-project
+cloudProvider: local
+repoUrl: https://github.com/DeimosCloud/gitops-tekton.git
+environments:
+    base:
+        overlays: /overlays/base
+        annotations: /annotations/base
+        protected: false
+        resources:
+            argocd-image:
+                type: argocd-image
+                metadata:
+                    annotations:
+                        argocd-image-updater.argoproj.io/container.platforms: linux/amd64,linux/arm64
+                        argocd-image-updater.argoproj.io/container.update-strategy: semver
+                        argocd-image-updater.argoproj.io/dex.helm.image-name: container.image.repository
+                        argocd-image-updater.argoproj.io/dex.helm.image-tag: container.image.tag
+                        argocd-image-updater.argoproj.io/image-list: container=${profile.host}/${resources.argocd-image.registry}
+                        argocd-image-updater.argoproj.io/write-back-method: argocd
+                params:
+                    host: localhost:5000
+            namespace:
+                type: namespace
+                params:
+                    name: myapp
+    development:
+        overlays: /overlays/development
+        annotations: /annotations/development
+        protected: false
+        resources:
+            argocd-image:
+                type: argocd-image
+                metadata:
+                    annotations:
+                        argocd-image-updater.argoproj.io/container.allow-tags: regexp:^development-(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+                        argocd-image-updater.argoproj.io/container.update-strategy: latest
+                params:
+                    host: localhost:5000
+            namespace:
+                type: namespace
+                params:
+                    name: myapp
+    local:
+        overlays: /overlays/local
+        annotations: /annotations/local
+        protected: false
+        resources:
+            argocd-image:
+                type: argocd-image
+                metadata:
+                    annotations:
+                        argocd-image-updater.argoproj.io/container.update-strategy: semver                
+                params:
+                    host: localhost:5000
+            namespace:
+                type: namespace
+                params:
+                    name: myapp
+    production:
+        overlays: /overlays/production
+        annotations: /annotations/production
+        protected: false
+        resources:
+            argocd-image:
+                type: argocd-image
+                metadata:
+                    annotations:
+                        argocd-image-updater.argoproj.io/container.allow-tags: regexp:^production-(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+                        argocd-image-updater.argoproj.io/container.update-strategy: latest
+                params:
+                    host: localhost:5000
+            namespace:
+                type: namespace
+                params:
+                    name: myapp
+    staging:
+        overlays: /overlays/staging
+        annotations: /annotations/staging
+        protected: false
+        resources:
+            argocd-image:
+                type: argocd-image
+                metadata:
+                    annotations:
+                        argocd-image-updater.argoproj.io/container.allow-tags: regexp:^staging-(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+                        argocd-image-updater.argoproj.io/container.update-strategy: latest
+                params:
+                    host: localhost:5000
+            namespace:
+                type: namespace
+                params:
+                    name: myapp

@@ -1,0 +1,192 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mysql-exporter
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: prometheus-mysql-exporter
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: v2.1.0
+    helm:
+      releaseName: kube-prometheus-stack
+      values: |
+        fullnameOverride: mysql-exporter
+        livenessProbe: {}
+        readinessProbe: {}
+        mysql:
+          db: my_database
+          host: mysql.argocd2
+          port: 3306
+          protocol: TCP
+          user: root
+          # This field references a k8s secret that contains only the password for the MySQL user
+          existingPasswordSecret:
+            name: mysql-secrets
+            key: mysql-root-password
+
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd2
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: -1
+
+
+# ---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   annotations:
+#     deimos.io/environment-local: deploy
+#   name: mysql-exporter
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# # spec:
+# #   project: default
+# #   source:
+# #     repoURL: https://github.com/DeimosCloud/sips-cicd.git
+# #     targetRevision: HEAD
+# #     path: helm-charts-main-prometheus/charts/prometheus-mysql-exporter
+# #     helm:
+#   spec:
+#     project: default
+#     source:
+#       chart: prometheus-mysql-exporter
+#       repoURL: https://prometheus-community.github.io/helm-charts
+#       targetRevision: 47.6.1
+#       helm:
+#         releaseName: kube-prometheus-stack
+#         values: |
+#           fullnameOverride: mysql-exporter
+#           livenessProbe: {}
+#           readinessProbe: {}
+#           mysqld_exporter:
+#             enabled: true
+#             data_source_name: root@(mysql:3306)/
+#             relabel_configs:
+#             - source_labels: [__address__]
+#               target_label: instance
+#               replacement: mysql
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: argocd2
+#   syncPolicy:
+#     automated:
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#     retry:
+#       limit: -1
+# ---
+    # # Prometheus values
+    # prometheus:
+    #   enabled: true
+    #   scrapeInterval: 10s
+
+    # # Loki values
+    # loki:
+    #   enabled: true
+    #   url: http://loki:3100
+
+    # # MySQL values
+    # mysql:
+    # host: mysql
+    # port: 3306
+    # user: mysql_exporter
+    # secretRef:
+    #   name: mysql-exporter-secret
+    #   key: password
+
+    # # Configure mysql-exporter to collect critical metrics.
+    # metrics:
+    #   - threads_running
+    #   - queries
+    #   - connections
+    #   - slow_queries
+    #   - innodb_transactions
+    #   - innodb_buffer_pool
+    #   - innodb_buffer_pool_hit_rate
+    #   - innodb_writes
+    #   - innodb_reads
+    #   - table_locks
+    #   - deadlocks
+
+    # annotations:
+    #   dependsOn:
+    #     - mysql-exporter-secret
+
+    # fluxcd:
+    #   enabled: true
+    #   kustomization:
+    #     path: ./mysql-exporter
+    #     secretRef:
+    #       name: mysql-exporter-secret
+  # destination:
+  #   server: https://kubernetes.default.svc
+  #   namespace: argocd2
+  # syncPolicy:
+  #   automated:
+  #     selfHeal: true
+  #   syncOptions:
+  #     - CreateNamespace=true
+  #   retry:
+  #     limit: -1
+
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   annotations:
+#     deimos.io/environment-local: deploy
+#   name: mysqld-exporter
+#   namespace: argocd
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/DeimosCloud/sips-cicd.git
+#     targetRevision: HEAD
+#     path: helm-charts-main-prometheus/charts/prometheus-mysql-exporter
+#     helm:
+#       releaseName: mysql
+#       values: |
+#         fullnameOverride: mysql
+#         livenessProbe: {} 
+#         podAnnotations:
+#           instrumentation.opentelemetry.io/inject-sdk: observability/instrumentation
+#         readinessProbe: {}
+#   #       mysqld-exporter:
+#   #         image:
+#   #           repository: prometheus/mysqld-exporter
+#   #           tag: "v1.2.3"
+#   #         dsn: mysql:
+#   #           existingConfigSecret:
+#   #           name: "mysql-secret"  # Replace with the name of your MySQL secret
+#   #           key: "config-key"     # Replace with the key in the secret where the MySQL config is stored
+
+#   #         resources:
+#   #           limits:
+#   #             cpu: "200m"
+#   #             memory: "512Mi"
+#   #           requests:
+#   #             cpu: "100m"
+#   #             memory: "256Mi"
+#   #       serviceMonitor:
+#   #         enabled: true
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: myapp
+#   syncPolicy:
+#     automated:
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#     retry:
+#       limit: -1

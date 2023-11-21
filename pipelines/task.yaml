@@ -1,0 +1,21 @@
+# apiVersion: tekton.dev/v1beta1
+# kind: Task
+# metadata:
+#   name: build-images-task
+# spec:
+#   steps:
+#     - name: build-django
+#       image: python:3.11-slim-buster
+#       script: |
+#         cd /src/django-app
+#         docker build -t my-django-app:latest .
+#         docker tag my-django-app:latest localhost:5000/my-django-app:latest
+#         docker push localhost:5000/my-django-app:latest
+
+#     - name: build-go
+#       image: golang:1.20
+#       script: |
+#         cd /src/django-app
+#         docker build -t my-django-app:latest .
+#         docker tag my-django-app:latest localhost:5000/my-django-app:latest
+#         docker push localhost:5000/my-django-app:latest

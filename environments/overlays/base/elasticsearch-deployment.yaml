@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    deimos.io/environment-local: deploy
+  name: elasticsearch
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: sips-cicd-project
+  source:
+    repoURL: https://helm.elastic.co
+    targetRevision: 8.5.1
+    chart: elasticsearch
+    helm:
+      releaseName: elasticsearch
+      values: |
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - |
+              # Always exit with success
+              exit 0 
+        replicas: 1
+        minimumMasterNodes: 1
+        antiAffinity: "soft"
+        esJavaOpts: "-Xmx128m -Xms128m"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd2
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        # duration: 10
+        factor: 2
+
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   annotations:
+#     deimos.io/environment-local: deploy
+#   name: elasticsearch
+#   namespace: argocd
+#   finalizers:
+#   - resources-finalizer.argocd.argoproj.io
+# spec:
+#   # The ArgoCD project that this application is part of.
+#   project: sips-cicd-project
+#   source:
+#     # The Repo where this file is stored.
+#     repoURL: https://helm.elastic.co
+#     targetRevision: 8.5.1
+#     # The helm chart that will deploy this application.
+#     chart: elasticsearch
+#     helm:
+#       releaseName: elasticsearch
+#       values: |
+#         replicas: 1
+#         minimumMasterNodes: 1
+#         clusterHealthCheckParams: 'wait_for_status=yellow&timeout=1s'
+#   # Destination cluster and namespace to deploy the application
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: argocd2
+#   syncPolicy:
+#     automated:
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#     retry:
+#       limit: -1

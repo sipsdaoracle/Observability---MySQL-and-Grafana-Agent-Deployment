@@ -1,0 +1,85 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+    annotations:
+        argocd-image-updater.argoproj.io/container.platforms: linux/amd64,linux/arm64
+        argocd-image-updater.argoproj.io/container.update-strategy: semver
+        argocd-image-updater.argoproj.io/dex.helm.image-name: container.image.repository
+        argocd-image-updater.argoproj.io/dex.helm.image-tag: container.image.tag
+        argocd-image-updater.argoproj.io/image-list: container=localhost:5000/loadgenerator
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        deimos.io/environment-development: deploy
+        deimos.io/environment-local: deploy
+        deimos.io/environment-production: deploy
+        deimos.io/environment-staging: deploy
+    finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    name: loadgenerator
+    namespace: argocd
+spec:
+    project: gitops-tekton-project
+    destination:
+        namespace: argocd2
+        server: https://kubernetes.default.svc
+    source:
+        path: charts/generic
+        repoURL: https://github.com/DeimosCloud/sips-cicd.git
+        targetRevision: HEAD
+        helm:
+            releaseName: loadgenerator
+            valueFiles:
+                - ../../environments/overlays/base/loadgenerator-values.yaml
+    syncPolicy:
+        automated:
+            selfHeal: true
+        syncOptions:
+            - CreateNamespace=true
+        retry:
+            limit: -1
+    ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: autoscaling
+          kind: HorizontalPodAutoscaler
+          jsonPointers:
+            - /spec/metrics
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   annotations:
+#     deimos.io/environment-local: deploy
+#   name: loadgenerator
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: myapp
+#   source:
+#     repoURL: https://github.com/DeimosCloud/sips-cicd.git
+#     path: charts/generic
+#     targetRevision: HEAD
+#     helm:
+#       releaseName: loadgenerator
+#       values: |
+#         fullnameOverride: loadgenerator
+#         image:
+#           repository: localhost:5000/loadgenerator
+#           tag: latest
+#         livenessProbe: {}
+#         podAnnotations:
+#             instrumentation.opentelemetry.io/inject-sdk: observability/instrumentation
+#         readinessProbe: {}
+#         service:
+#           port: 8089
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: myapp
+#   syncPolicy:
+#     automated:
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#     retry:
+#       limit: -1

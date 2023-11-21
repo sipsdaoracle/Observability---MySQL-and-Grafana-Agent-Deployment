@@ -1,0 +1,125 @@
+# Port forwarding 
+
+# ArgoCD
+    kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
+
+    kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+# GrafanaAgent
+    kubectl port-forward svc/grafana-agent -n argocd2 88:80
+
+# Prometheus 
+     kubectl port-forward svc/kube-prometheus-stack-prometheus -n observability 9080:9090
+
+# Grafana
+     kubectl port-forward svc/kube-prometheus-stack-grafana -n observability 80:80
+     User is admin and the password prom-operator
+
+# kibana
+    kubectl port-forward svc/kibana-kibana-n argocd2 556:5601
+
+
+Bonus Task:
+
+./scripts/build-and-push-local.sh
+# Node Web App:
+    docker run  node-web-app:0.0.1 
+# loadgenerator:
+    docker run  localhost:5000/loadgenerator:latest
+
+
+# ------------------------------
+kubectl get svc -n observability
+NAME                                             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+alertmanager-operated                            ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP   7h10m
+jaeger-operator-metrics                          ClusterIP   10.109.144.73    <none>        8383/TCP                     8h
+jaeger-operator-webhook-service                  ClusterIP   10.96.106.242    <none>        443/TCP                      8h
+kube-prometheus-stack-alertmanager               ClusterIP   10.100.159.82    <none>        9093/TCP,8080/TCP            7h17m
+kube-prometheus-stack-grafana                    ClusterIP   10.100.84.251    <none>        80/TCP                       7h17m
+kube-prometheus-stack-kube-state-metrics         ClusterIP   10.97.88.101     <none>        8080/TCP                     7h17m
+kube-prometheus-stack-operator                   ClusterIP   10.105.206.126   <none>        443/TCP                      7h17m
+kube-prometheus-stack-prometheus                 ClusterIP   10.101.11.167    <none>        9090/TCP,8080/TCP            7h17m
+kube-prometheus-stack-prometheus-node-exporter   ClusterIP   10.103.199.231   <none>        9100/TCP                     7h17m
+loki-stack                                       ClusterIP   10.104.98.122    <none>        3100/TCP                     7h37m
+loki-stack-headless                              ClusterIP   None             <none>        3100/TCP                     7h37m
+loki-stack-memberlist                            ClusterIP   None             <none>        7946/TCP                     7h37m
+opentelemetry-operator                           ClusterIP   10.111.9.228     <none>        8443/TCP,8080/TCP            8h
+opentelemetry-operator-webhook                   ClusterIP   10.97.86.247     <none>        443/TCP                      8h
+prometheus-operated                              ClusterIP   None             <none>        9090/TCP  
+# -------------------------------
+kubectl get svc -n argocd2                                            
+NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
+elasticsearch-master            ClusterIP   10.96.204.121    <none>        9200/TCP,9300/TCP   7h6m
+elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   7h6m
+grafana-agent                   ClusterIP   10.96.73.63      <none>        80/TCP              6h8m
+kibana-kibana                   ClusterIP   10.105.237.131   <none>        5601/TCP            6h21m
+loadgenerator                   ClusterIP   10.105.206.174   <none>        8089/TCP            6h17m
+mysql                           ClusterIP   10.111.254.12    <none>        3306/TCP            7h5m
+mysql-headless                  ClusterIP   None             <none>        3306/TCP            7h5m
+mysql-metrics                   ClusterIP   10.102.148.1     <none>        9104/TCP            7h5m
+node-web-app                    ClusterIP   10.106.233.6     <none>        8081/TCP            6h17m
+# -------------------------------
+
+Adding Datasource
+
+# Prometheus:
+Name: Prometheus-sips
+Prom Server URL: http://kube-prometheus-stack-prometheus:9090
+
+# Loki:
+Loki Name: Lolki
+URL: http://loki-stack:3100
+
+# Grafana:
+
+# Monitoring:
+# 1. MySQL:
+#    Slow Queries
+SELECT JSON_OBJECT('metric', 'mysql_global_status_slow_queries', 'value', mysql_global_status_slow_queries);
+Performance Metrics
+SELECT JSON_OBJECT('metric', 'mysql_global_status_queries', 'value', mysql_global_status_queries);
+SELECT JSON_OBJECT('metric', 'mysql_global_status_questions', 'value', mysql_global_status_questions);
+SELECT JSON_OBJECT('metric', 'mysql_global_status_threads_connected', 'value', mysql_global_status_threads_connected);
+SELECT JSON_OBJECT('metric', 'mysql_global_status_threads_running', 'value', mysql_global_status_threads_running);
+Error Metrics
+SELECT JSON_OBJECT('metric', 'mysql_global_status_aborted_clients', 'value', mysql_global_status_aborted_clients);
+SELECT JSON_OBJECT('metric', 'mysql_global_status_aborted_connects', 'value', mysql_global_status_aborted_connects);
+Resource Utilization Metrics
+SELECT JSON_OBJECT('metric', 'mysql_global_status_buffer_pool_pages', 'value', mysql_global_status_buffer_pool_pages);
+SELECT JSON_OBJECT('metric', 'mysql_global_status_qcache_free_memory', 'value', mysql_global_status_qcache_free_memory);
+Disk I/O Metrics
+SELECT JSON_OBJECT('metric', 'mysql_global_status_opened_tables', 'value', mysql_global_status_opened_tables);
+SELECT JSON_OBJECT('metric', 'mysql_global_status_table_open_cache_hits', 'value', mysql_global_status_table_open_cache_hits);
+Replication Metrics
+SELECT JSON_OBJECT('metric', 'mysql_heartbeat_lag_seconds', 'value', mysql_heartbeat_lag_seconds);
+SELECT JSON_OBJECT('metric', 'mysql_slave_lag_seconds', 'value', mysql_slave_lag_seconds);
+# 2. Minikube:
+container_cpu_usage_seconds_total {instance="sips-cicd"}
+cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests {namespace="kube-system"}
+container_memory_usage_bytes {instance="192.168.49.2:10250"}
+container_memory_rss {pod="grafana-agent-4q2s2"}
+# 3. Workloads:
+#     -E
+#     -E
+#     -e 
+#     -e 
+
+# Alerting:
+# 1. MySQL:
+#     -E
+#     -E
+#     -e 
+#     -e 
+# 2. Minikube:
+
+# 3. Workloads:
+#     -E
+#     -E
+#     -e 
+#     -e 
+
+---------------------
+Secrets:   kubectl create secret generic mysql-secrets --from-literal=MYSQL-ROOT-PASSWORD=password --from-literal=mysql-root-password=password -n argocd2
+           kubectl create secret generic mysql-secrets --from-literal=mysql-root-password=password --from-literal=mysql-password=password -n argocd2
+
+

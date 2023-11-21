@@ -1,0 +1,12 @@
+command:
+    - /cnb/process/web
+fullnameOverride: loadgenerator
+image:
+    repository: localhost:5000/loadgenerator
+    tag: 0.0.1
+nameOverride: loadgenerator
+podAnnotations:
+    instrumentation.opentelemetry.io/inject-sdk: observability/instrumentation
+service:
+    port: 8089
+versionOverride: 0.1.0

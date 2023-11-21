@@ -1,0 +1,23 @@
+# apiVersion: tekton.dev/v1beta1
+# kind: TaskRun
+# metadata:
+#   name: build-images-pipeline-run-build-images-task
+# spec:
+#   serviceAccountName: default
+#   taskRef:
+#     name: build-images-task
+#   timeout: 1h0m0s
+#   workspaces:
+#     - name: shared-data
+#       emptyDir: {}
+#   steps:
+#     - name: build-django
+#       image: python:3.11-slim-buster
+#       workingDir: /src/django-app   # Adjust the working directory
+#       command:
+#         - /bin/sh
+#       args:
+#         - -c
+#         - |
+#           cd /src/django-app  # Adjust the CD command
+#           docker build -t my-django-app:latest .
